@@ -1,0 +1,85 @@
+generator client {
+  provider = "prisma-client-js"
+  // output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        Int        @id @default(autoincrement())
+  name      String
+  email     String     @unique
+  password  String
+  role      String     @default("seller")
+  saleNotes SaleNote[] // Relación inversa: todas las notas de venta hechas por el usuario
+}
+
+model Product {
+  id              Int          @id @default(autoincrement())
+  name            String       @db.VarChar(60)
+  description     String?      @db.VarChar(200) // Descripción opcional
+  image           String
+  price           Float
+  unitsPerPackage Int?         // Ej: 16 si es una caja de 16 cervezas, null si no aplica
+  isFavorite      Boolean      @default(false) // Campo favorito
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+  active          Boolean      @default(true)
+  saleDetails     SaleDetail[] // Relación inversa: detalles de venta donde aparece este producto
+}
+
+model PaymentType {
+  id          Int         @id @default(autoincrement())
+  name        String      @unique @db.VarChar(40) // Ej: "Yape", "Plin", "Izipay", "Niubiz", "Cash", "Transferencia BCP"
+  description String?     @db.VarChar(100)
+  active      Boolean     @default(true)
+  saleNotes   SaleNote[]  // Relación inversa: notas de venta que usaron este tipo de pago
+}
+
+enum SaleNoteStatus {
+  ACTIVE
+  CANCELLED
+}
+
+model SaleNote {
+  id             Int             @id @default(autoincrement())
+  userId         Int
+  paymentTypeId  Int
+  clientName     String?
+  comment        String?
+  total          Float
+  totalPaid      Float?          // Nuevo campo
+  change         Float?          // Nuevo campo
+  paymentDetails String?         // JSON con detalles de pagos múltiples
+  status         SaleNoteStatus  @default(ACTIVE)
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+
+  user        User           @relation(fields: [userId], references: [id])
+  paymentType PaymentType    @relation(fields: [paymentTypeId], references: [id])
+  details     SaleDetail[]
+
+  @@map("sale_notes")
+}
+
+model SaleDetail {
+  id                 Int         @id @default(autoincrement())
+  saleNote           SaleNote    @relation(fields: [saleNoteId], references: [id])
+  saleNoteId         Int
+  product            Product     @relation(fields: [productId], references: [id])
+  productId          Int
+  quantity           Int
+  price              Float       // Precio unitario en el momento de la venta
+  subtotal           Float       // price * quantity
+
+  // Datos históricos del producto en el momento de la venta
+  productName        String      @db.VarChar(60)
+  productDescription String?     @db.VarChar(200)
+  unitsPerPackage    Int?
+  productImage       String?
+
+  @@map("sale_details")
+}

@@ -1,0 +1,35 @@
+services:
+  app:
+    image: node:22
+    working_dir: /app
+    volumes:
+      - ./:/app
+    command: sh -c "npm install -g pm2 && npm install && npm run build && pm2-runtime start npm -- start"
+    env_file:
+      - .env.production
+    environment:
+      - DB_HOST=db
+      - DB_PORT=5432
+      - DB_USER=altokerprod
+      - DB_PASS=gVAifbImg7Eu01XU
+      - DB_NAME=altoke_spa
+      - DATABASE_URL=postgresql://altokerprod:gVAifbImg7Eu01XU@db:5432/altoke_spa
+      - NEXT_PUBLIC_BASE_URL=https://app.leonardoaraujo.net.pe
+      - NEXT_PUBLIC_MIN_DATE=2025-07-27
+    ports:
+      - "3000:3000"
+    depends_on:
+      - db
+  db:
+    image: postgres:15
+    environment:
+      - POSTGRES_USER=altokerprod
+      - POSTGRES_PASSWORD=gVAifbImg7Eu01XU
+      - POSTGRES_DB=altoke_spa
+    ports:
+      - "5432:5432"
+    volumes:
+      - db_data:/var/lib/postgresql/data
+
+volumes:
+  db_data:
