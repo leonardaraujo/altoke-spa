@@ -45,7 +45,7 @@ export async function GET(request: NextRequest) {
     });
 
     // Total vendido
-    const totalVendido = saleNotes.reduce((sum, note) => sum + Number(note.total), 0);
+    const totalVendido = saleNotes.reduce((sum: number, note: any) => sum + Number(note.total), 0);
 
     // Obtener info de productos para saber unitsPerPackage
     const productIds = [...new Set(saleNotes.flatMap(note => note.details.map(det => det.productId)))];
@@ -64,7 +64,7 @@ export async function GET(request: NextRequest) {
     }> = {};
 
     saleNotes.forEach(note => {
-      note.details.forEach(det => {
+      note.details.forEach((det: any) => {
         const product = productMap[det.productId];
         const unitsPerPackage = product?.unitsPerPackage || 1;
         
@@ -87,7 +87,11 @@ export async function GET(request: NextRequest) {
       ? { id: Number(productosOrdenados[0][0]), ...productosOrdenados[0][1] }
       : null;
 
-    // Lógica de pagos (igual que antes)
+    // NUEVA LÓGICA: Obtener los payment types para verificar keys
+    const paymentTypes = await prisma.paymentType.findMany();
+    const paymentTypeMap = Object.fromEntries(paymentTypes.map(pt => [pt.name, pt]));
+
+    // Lógica de pagos actualizada con el campo 'key'
     const pagosPorTipo: Record<string, number> = {};
 
     saleNotes.forEach(note => {
@@ -107,7 +111,10 @@ export async function GET(request: NextRequest) {
       let cashKey: string | null = null;
 
       pagos.forEach((p: any) => {
-        const isCash = p.paymentTypeName.toLowerCase().includes("efectivo") || p.paymentTypeName.toLowerCase().includes("cash");
+        // NUEVA LÓGICA: usar el campo 'key' para identificar efectivo
+        const paymentType = paymentTypeMap[p.paymentTypeName];
+        const isCash = paymentType?.key === 'cash';
+        
         if (!isCash) {
           const monto = Math.min(Number(p.amount), Math.max(0, totalVenta - totalNoCash));
           pagosPorTipo[p.paymentTypeName] = (pagosPorTipo[p.paymentTypeName] || 0) + monto;
@@ -138,7 +145,7 @@ export async function GET(request: NextRequest) {
     Object.entries(productoCantidad).forEach(([id, data]) => {
       let monto = 0;
       saleNotes.forEach(note => {
-        note.details.forEach(det => {
+        note.details.forEach((det: any) => {
           if (det.productId === Number(id)) {
             monto += Number(det.price) * det.quantity;
           }
@@ -155,8 +162,8 @@ export async function GET(request: NextRequest) {
     });
 
     // Totales con unidades individuales
-    const totalProductosVendidos = productosVendidos.reduce((sum, p) => sum + p.cantidadPacks, 0);
-    const totalUnidadesIndividuales = productosVendidos.reduce((sum, p) => sum + p.unidadesIndividuales, 0);
+    const totalProductosVendidos = productosVendidos.reduce((sum: number, p: any) => sum + p.cantidadPacks, 0);
+    const totalUnidadesIndividuales = productosVendidos.reduce((sum: number, p: any) => sum + p.unidadesIndividuales, 0);
 
     // Total en efectivo de productos vendidos
     let totalEfectivoProductos = 0;
@@ -172,7 +179,9 @@ export async function GET(request: NextRequest) {
         pagos = [{ paymentTypeName: note.paymentType.name, amount: Number(note.total) }];
       }
       pagos.forEach((p: any) => {
-        const isCash = p.paymentTypeName.toLowerCase().includes("efectivo") || p.paymentTypeName.toLowerCase().includes("cash");
+        // NUEVA LÓGICA: usar el campo 'key' para identificar efectivo
+        const paymentType = paymentTypeMap[p.paymentTypeName];
+        const isCash = paymentType?.key === 'cash';
         if (isCash) {
           totalEfectivoProductos += Number(p.amount);
         }

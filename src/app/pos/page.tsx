@@ -13,6 +13,7 @@ type PaymentType = {
   id: number;
   name: string;
   description?: string;
+  key?: string; // Agregado el campo key
 };
 
 type Payment = {
@@ -131,10 +132,16 @@ export default function POSPage() {
     }
   };
 
-  // Funciones de pago
+  // Funciones de pago - CORREGIDO para evitar pagos duplicados
   const agregarPago = () => {
     if (!selectedPaymentType || !paymentAmount || Number(paymentAmount) <= 0) {
       toast.error("Selecciona un tipo de pago y un monto válido");
+      return;
+    }
+
+    // NUEVO: Verifica si ya existe un pago de este tipo
+    if (payments.some(p => p.paymentTypeId === selectedPaymentType)) {
+      toast.error("Ya agregaste este tipo de pago. Elimínalo primero si quieres modificarlo.");
       return;
     }
 
@@ -142,7 +149,8 @@ export default function POSPage() {
     if (!paymentType) return;
 
     const amount = Number(paymentAmount);
-    const isCash = paymentType.name.toLowerCase().includes("efectivo") || paymentType.name.toLowerCase().includes("cash");
+    // NUEVO: usar el campo 'key' para identificar efectivo
+    const isCash = paymentType.key === 'cash';
     const faltante = Math.max(0, total_carrito - totalPaid);
 
     if (!isCash && amount > faltante) {
@@ -158,10 +166,12 @@ export default function POSPage() {
 
     setSelectedPaymentType(null);
     setPaymentAmount("");
+    toast.success(`Pago de ${paymentType.name} agregado correctamente`);
   };
 
   const eliminarPago = (index: number) => {
     setPayments(prev => prev.filter((_, i) => i !== index));
+    toast.success("Pago eliminado");
   };
 
   // NUEVO: Imprimir recibo
@@ -720,9 +730,11 @@ export default function POSPage() {
                         className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                       >
                         <option value="">Tipo de pago</option>
-                        {paymentTypes.map(pt => (
-                          <option key={pt.id} value={pt.id}>{pt.name}</option>
-                        ))}
+                        {paymentTypes
+                          .filter(pt => !payments.some(p => p.paymentTypeId === pt.id)) // NUEVO: Filtrar tipos ya agregados
+                          .map(pt => (
+                            <option key={pt.id} value={pt.id}>{pt.name}</option>
+                          ))}
                       </select>
                     </div>
                     <div className="flex gap-2">
@@ -733,7 +745,8 @@ export default function POSPage() {
                         onChange={(e) => {
                           const value = e.target.value;
                           const paymentType = paymentTypes.find(pt => pt.id === selectedPaymentType);
-                          const isCash = paymentType?.name?.toLowerCase().includes("efectivo") || paymentType?.name?.toLowerCase().includes("cash");
+                          // NUEVO: usar el campo 'key' para identificar efectivo
+                          const isCash = paymentType?.key === 'cash';
                           const faltante = Math.max(0, total_carrito - totalPaid);
                           if (!isCash && Number(value) > faltante) {
                             setPaymentAmount(faltante === 0 ? "" : String(faltante));
@@ -747,7 +760,8 @@ export default function POSPage() {
                         max={
                           (() => {
                             const paymentType = paymentTypes.find(pt => pt.id === selectedPaymentType);
-                            const isCash = paymentType?.name?.toLowerCase().includes("efectivo") || paymentType?.name?.toLowerCase().includes("cash");
+                            // NUEVO: usar el campo 'key' para identificar efectivo
+                            const isCash = paymentType?.key === 'cash';
                             return isCash ? undefined : Math.max(0, total_carrito - totalPaid);
                           })()
                         }
@@ -759,7 +773,7 @@ export default function POSPage() {
                         className="bg-blue-100 hover:bg-blue-200 text-blue-700 px-2 rounded transition"
                         disabled={
                           !selectedPaymentType ||
-                          (paymentTypes.find(pt => pt.id === selectedPaymentType)?.name?.toLowerCase().includes("efectivo")
+                          (paymentTypes.find(pt => pt.id === selectedPaymentType)?.key === 'cash'
                             ? false
                             : remaining <= 0)
                         }
@@ -791,7 +805,7 @@ export default function POSPage() {
                       <div key={index} className="flex items-center justify-between bg-gray-50 rounded-lg p-3">
                         <div>
                           <span className="font-medium">{payment.paymentTypeName}</span>
-                          <span className="text-blue-600 font-semibold ml-2">S/{payment.amount.toFixed(2)}</span>
+                          <span className="text-blue-600 font-semibold ml-2">S/${payment.amount.toFixed(2)}</span>
                         </div>
                         <button
                           onClick={() => eliminarPago(index)}

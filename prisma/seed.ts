@@ -4,30 +4,35 @@ import bcrypt from 'bcryptjs';
 const prisma = new PrismaClient();
 
 async function main() {
-  // Elimina todos los usuarios existentes
+  // Borra en orden correcto por dependencias
+  await prisma.saleDetail.deleteMany();
+  await prisma.saleNote.deleteMany();
+  await prisma.product.deleteMany();
   await prisma.user.deleteMany();
-
-  // Elimina todos los métodos de pago existentes
   await prisma.paymentType.deleteMany();
 
   // Hashea las contraseñas
-  const passwordJuan = await bcrypt.hash('123456', 10);
-  const passwordAna = await bcrypt.hash('123456', 10);
+  const passwordAnibal = await bcrypt.hash('123456', 10);
+  const passwordCielo = await bcrypt.hash('123456', 10);
+  const passwordSonia = await bcrypt.hash('123456', 10);
 
-  // Inserta nuevos usuarios con rol y contraseña hasheada
+  // Inserta usuarios
   await prisma.user.createMany({
     data: [
-      { name: 'Juan', email: 'juan@email.com', password: passwordJuan, role: 'admin' },
-      { name: 'Ana', email: 'ana@email.com', password: passwordAna, role: 'seller' },
+      { name: 'Anibal', email: 'anibal@email.com', password: passwordAnibal, role: 'admin' },
+      { name: 'Cielo', email: 'cielo@email.com', password: passwordCielo, role: 'admin' },
+      { name: 'Sonia Clemente Guerra', email: 'sonia@email.com', password: passwordSonia, role: 'seller' },
     ],
   });
 
   // Inserta métodos de pago
   await prisma.paymentType.createMany({
     data: [
-      { name: 'Cash', description: 'Pago en efectivo', active: true },
+      { name: 'Efectivo', description: 'Pago en efectivo', key: 'cash', active: true },
       { name: 'Yape', description: 'Pago con Yape', active: true },
-      { name: 'Tarjeta de crédito o débito', description: 'Pago con tarjeta', active: true },
+      { name: 'Plin', description: 'Pago con Plin', active: true },
+      { name: 'Transferencia BCP', description: 'Transferencia Bancaria BCP', active: true },
+      { name: 'Transferencia Scotiabank', description: 'Transferencia Bancaria Scotiabank', active: true },
     ],
   });
 

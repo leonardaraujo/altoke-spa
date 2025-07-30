@@ -33,10 +33,11 @@ model Product {
 
 model PaymentType {
   id          Int         @id @default(autoincrement())
-  name        String      @unique @db.VarChar(40) // Ej: "Yape", "Plin", "Izipay", "Niubiz", "Cash", "Transferencia BCP"
+  name        String      @unique @db.VarChar(40)
   description String?     @db.VarChar(100)
+  key         String?     @unique @db.VarChar(20) // Nueva columna para identificar tipos especiales
   active      Boolean     @default(true)
-  saleNotes   SaleNote[]  // Relación inversa: notas de venta que usaron este tipo de pago
+  saleNotes   SaleNote[]
 }
 
 enum SaleNoteStatus {
