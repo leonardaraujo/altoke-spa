@@ -17,7 +17,7 @@ services:
       - NEXT_PUBLIC_BASE_URL=https://app.leonardoaraujo.net.pe
       - NEXT_PUBLIC_MIN_DATE=2025-07-27
     ports:
-      - "3000:3000"
+      - "3001:3000"
     depends_on:
       - db
   db:
