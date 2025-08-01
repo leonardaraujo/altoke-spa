@@ -1,4 +1,10 @@
 "use client";
+import dayjs from "dayjs";
+import utc from "dayjs/plugin/utc";
+import timezone from "dayjs/plugin/timezone";
+dayjs.extend(utc);
+dayjs.extend(timezone);
+
 import { DollarSign, ShoppingCart, Package, TrendingUp, Eye } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
@@ -32,11 +38,12 @@ export default function Dashboard() {
     const fetchStats = async () => {
       try {
         // Obtener estadísticas de hoy
-        const today = new Date().toISOString().split('T')[0];
+         const today = dayjs().tz("America/Lima").format("YYYY-MM-DD");
         const [statsRes, productsRes, salesRes] = await Promise.all([
           fetch(`/api/stats?date=${today}`),
           fetch('/api/products/all?pageSize=1000'),
-          fetch('/api/salenote/last')
+          // AGREGADO: &status=ACTIVE para que solo traiga ventas activas
+          fetch(`/api/salenote?startDate=${today}&endDate=${today}&pageSize=3&status=ACTIVE`)
         ]);
 
         const statsData = await statsRes.json();
@@ -49,14 +56,17 @@ export default function Dashboard() {
             cantidad: statsData.cantidadVentas || 0
           },
           productosActivos: productsData.products?.filter((p: any) => p.active).length || 0,
-          ultimasVentas: salesData.ventas?.slice(0, 3).map((v: any) => ({
+          ultimasVentas: salesData.saleNotes?.slice(0, 3).map((v: any) => ({
             id: v.id,
-            fecha: new Date(v.fecha).toLocaleTimeString('es-PE', { 
+            fecha: new Date(v.createdAt).toLocaleTimeString('es-PE', { 
               hour: '2-digit', 
               minute: '2-digit' 
             }),
             total: v.total,
-            productos: v.productos.slice(0, 2) // Solo los primeros 2 productos
+            productos: v.details?.slice(0, 2).map((d: any) => ({
+              nombre: d.productName,
+              cantidad: d.quantity
+            })) || []
           })) || [],
           productoMasVendido: statsData.productoMasVendido ? {
             nombre: statsData.productoMasVendido.nombre,

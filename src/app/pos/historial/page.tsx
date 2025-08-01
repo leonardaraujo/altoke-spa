@@ -1,5 +1,9 @@
 "use client";
 import { useEffect, useState } from "react";
+import usePrinterStore from "@/store/printerStore";
+import { Printer } from "lucide-react";
+import { writeData } from "@/utils/printerUtils";
+import { generateReceipt } from "@/utils/receiptTemplate";
 
 type MetodoPago = {
   paymentTypeId: number;
@@ -23,11 +27,68 @@ type Venta = {
   vuelto: number;
   metodosPago: MetodoPago[];
   productos: Producto[];
+  status: "ACTIVE" | "CANCELLED";
 };
 
 export default function HistorialVentas() {
   const [ventas, setVentas] = useState<Venta[]>([]);
   const [loading, setLoading] = useState(true);
+  const [printingId, setPrintingId] = useState<number | null>(null);
+
+  // Estado de la impresora
+  const printerState = usePrinterStore((state) => state.printerState);
+  const printerChar = usePrinterStore((state) => state.toggleCharacteristic);
+
+  // Función para imprimir usando el template y la utilidad
+  const handlePrint = async (venta: Venta) => {
+    setPrintingId(venta.id);
+    try {
+      // Adaptar los datos de la venta al formato del template
+      const sale = {
+        id: venta.id,
+        clientName: "Público General",
+        comment: "",
+        total: venta.total,
+        totalPaid: venta.totalPagado,
+        change: venta.vuelto,
+        createdAt: venta.fecha,
+        details: venta.productos.map((prod) => ({
+          quantity: prod.cantidad,
+          price: prod.precio,
+          productName: prod.nombre,
+        })),
+        paymentDetails: JSON.stringify(venta.metodosPago.map(mp => ({
+          name: mp.paymentTypeName,
+          amount: mp.amount,
+        }))),
+      };
+
+      // Usuario vendedor
+      const user = { name: venta.usuario };
+
+      // Métodos de pago
+      const payments = venta.metodosPago.map(mp => ({
+        name: mp.paymentTypeName,
+        amount: mp.amount,
+      }));
+
+      // Generar el recibo (Uint8Array)
+      const receiptBytes = generateReceipt({
+        sale,
+        user,
+        payments,
+        businessName: "ALTOKE SPA",
+        ruc: "RUC 12345678901",
+        address: "Jr. Miguel Grau 305-Cochas Chico",
+      });
+
+      // Enviar a la impresora
+      await writeData(receiptBytes, printerChar);
+    } catch (err) {
+      console.log(err)
+    }
+    setPrintingId(null);
+  };
 
   useEffect(() => {
     const fetchVentas = async () => {
@@ -55,6 +116,26 @@ export default function HistorialVentas() {
                 <span className="font-semibold text-blue-700">Venta #{venta.id}</span>
                 <span className="text-sm text-gray-500">{new Date(venta.fecha).toLocaleString()}</span>
               </div>
+              <div className="mb-2">
+                <span className="text-gray-700">Estado:</span>{" "}
+                {venta.status === "CANCELLED" ? (
+                  <span className="inline-block px-2 py-1 text-xs font-semibold rounded bg-red-100 text-red-700">Cancelada</span>
+                ) : (
+                  <span className="inline-block px-2 py-1 text-xs font-semibold rounded bg-green-100 text-green-700">Activa</span>
+                )}
+              </div>
+              {/* Botón imprimir solo si está activa y la impresora conectada */}
+              {venta.status === "ACTIVE" && printerState && (
+                <button
+                  onClick={() => handlePrint(venta)}
+                  disabled={printingId === venta.id}
+                  className="mb-2 flex items-center gap-2 px-3 py-1 rounded bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 transition disabled:opacity-60"
+                  title="Imprimir de nuevo"
+                >
+                  <Printer size={16} />
+                  {printingId === venta.id ? "Imprimiendo..." : "Imprimir de nuevo"}
+                </button>
+              )}
               <div className="mb-2">
                 <span className="text-gray-700">Vendedor:</span>{" "}
                 <span className="font-medium">{venta.usuario}</span>

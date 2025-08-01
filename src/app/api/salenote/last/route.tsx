@@ -19,10 +19,11 @@ export async function GET(request: NextRequest) {
       }
     });
 
-    // Puedes parsear paymentDetails si quieres mostrar los métodos de pago combinados
+    // Ahora también se incluye el status
     const ventas = saleNotes.map(nota => ({
       id: nota.id,
       fecha: nota.createdAt,
+      status: nota.status, // <-- AGREGADO
       usuario: nota.user?.name,
       total: nota.total,
       totalPagado: nota.totalPaid,

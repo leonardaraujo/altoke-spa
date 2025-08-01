@@ -57,6 +57,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Crear mapa de tipos de pago para obtener nombres
+    const paymentTypesMap = new Map(paymentTypes.map(pt => [pt.id, pt]));
+
     // Obtener información de todos los productos
     const productIds = details.map((detail: any) => detail.productId);
     const products = await prisma.product.findMany({
@@ -104,7 +107,7 @@ export async function POST(request: NextRequest) {
     });
 
     // Calcular total
-   const total = saleDetailsData.reduce((sum: number, detail: any) => sum + detail.subtotal, 0);
+    const total = saleDetailsData.reduce((sum: number, detail: any) => sum + detail.subtotal, 0);
 
     // Validar que el total pagado sea correcto
     const calculatedTotalPaid = payments.reduce((sum: number, payment: any) => sum + Number(payment.amount), 0);
@@ -123,6 +126,15 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Agregar nombres de métodos de pago a paymentDetails
+    const paymentsWithNames = payments.map((payment: any) => {
+      const paymentType = paymentTypesMap.get(payment.paymentTypeId);
+      return {
+        ...payment,
+        paymentTypeName: paymentType?.name || 'N/A'
+      };
+    });
+
     // Para pagos múltiples, usamos el primer tipo de pago como principal
     const mainPaymentTypeId = payments[0].paymentTypeId;
 
@@ -139,7 +151,7 @@ export async function POST(request: NextRequest) {
         total,
         totalPaid,
         change: change || 0,
-        paymentDetails: JSON.stringify(payments), // Guardamos los detalles de pago como JSON
+        paymentDetails: JSON.stringify(paymentsWithNames), // Guardamos con nombres incluidos
         createdAt: limaNow, // Guardar con hora de Perú
         details: {
           create: saleDetailsData
@@ -196,7 +208,6 @@ export async function POST(request: NextRequest) {
   }
 }
 
-// ...existing GET function...
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
@@ -228,10 +239,12 @@ export async function GET(request: NextRequest) {
     if (startDate || endDate) {
       where.createdAt = {};
       if (startDate) {
-        where.createdAt.gte = new Date(startDate);
+        // Inicio del día
+        where.createdAt.gte = dayjs(startDate).startOf('day').toDate();
       }
       if (endDate) {
-        where.createdAt.lte = new Date(endDate);
+        // Final del día
+        where.createdAt.lte = dayjs(endDate).endOf('day').toDate();
       }
     }
 
@@ -242,7 +255,16 @@ export async function GET(request: NextRequest) {
         orderBy: { createdAt: "desc" },
         skip: (page - 1) * pageSize,
         take: pageSize,
-        include: {
+        select: {
+          id: true,
+          createdAt: true,
+          clientName: true,
+          comment: true,
+          total: true,
+          totalPaid: true,
+          change: true,
+          paymentDetails: true,
+          status: true, // <-- AGREGADO: para saber si está ACTIVA o CANCELADA
           user: {
             select: {
               id: true,

@@ -1,6 +1,7 @@
 "use client";
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import {
   Menu,
   X,
@@ -17,6 +18,7 @@ import { connectToPrinter } from "@/utils/printerUtils";
 
 export default function PosLayout({ children }: { children: React.ReactNode }) {
   const [open, setOpen] = useState(false);
+  const pathname = usePathname();
   const router = useRouter();
   const logout = useUserStore((state) => state.logout);
   const user = useUserStore((state) => state.user);
@@ -25,7 +27,6 @@ export default function PosLayout({ children }: { children: React.ReactNode }) {
   // Estado de la impresora desde el store
   const printerState = usePrinterStore((state) => state.printerState);
 
-  // Hidrata el usuario desde localStorage al montar el layout
   useEffect(() => {
     loadFromStorage();
   }, [loadFromStorage]);
@@ -35,7 +36,6 @@ export default function PosLayout({ children }: { children: React.ReactNode }) {
     router.replace("/");
   };
 
-  // Botón flotante para conectar impresora
   const handleConnectPrinter = async () => {
     try {
       await connectToPrinter();
@@ -78,26 +78,38 @@ export default function PosLayout({ children }: { children: React.ReactNode }) {
         <nav className="flex flex-col p-6 space-y-2">
           <a
             href="/pos"
-            className="flex items-center gap-3 px-4 py-3 rounded-lg bg-blue-50 text-blue-600 font-medium transition-colors"
+            className={`flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-colors
+              ${pathname === "/pos"
+                ? "bg-blue-50 text-blue-600"
+                : "text-gray-600 hover:bg-gray-50 hover:text-gray-800"}
+            `}
           >
             <ShoppingCart size={20} />
             Punto de Venta
           </a>
           <a
             href="/pos/historial"
-            className="flex items-center gap-3 px-4 py-3 rounded-lg text-gray-600 hover:bg-gray-50 hover:text-gray-800 font-medium transition-colors"
+            className={`flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-colors
+              ${pathname === "/pos/historial"
+                ? "bg-blue-50 text-blue-600"
+                : "text-gray-600 hover:bg-gray-50 hover:text-gray-800"}
+            `}
           >
             <Package size={20} />
             Historial de Ventas
           </a>
           {user?.role === "admin" && (
-            <a
-              href="/dashboard"
-              className="flex items-center gap-3 px-4 py-3 rounded-lg text-gray-600 hover:bg-gray-50 hover:text-gray-800 font-medium transition-colors"
-            >
-              <BarChart2 size={20} />
-              Ir a Dashboard
-            </a>
+          <a
+            href="/dashboard"
+            className={`flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-colors ${
+              pathname === "/dashboard"
+                ? "bg-blue-600 text-white"
+                : "bg-blue-500 text-white hover:bg-blue-600"
+            }`}
+          >
+            <BarChart2 size={20} />
+            Ir a Dashboard
+          </a>
           )}
         </nav>
 
@@ -151,22 +163,22 @@ export default function PosLayout({ children }: { children: React.ReactNode }) {
         </div>
         {children}
 
-        {/* Botón flotante de impresora */}
-        <button
-          onClick={handleConnectPrinter}
-          className={`
-            fixed z-50 bottom-6 right-6 flex items-center gap-2 px-4 py-3 rounded-full shadow-lg
-            font-semibold transition-colors
-            ${printerState
-              ? "bg-green-600 text-white hover:bg-green-700"
-              : "bg-gray-200 text-gray-700 hover:bg-blue-500 hover:text-white"}
-          `}
-          title={printerState ? "Impresora conectada" : "Conectar impresora"}
-        >
-          <Printer size={22} className={printerState ? "animate-pulse" : ""} />
-          {printerState ? "Impresora conectada" : "Conectar impresora"}
-        </button>
+        {/* Botón flotante de impresora SOLO si está desconectada */}
+        {!printerState && (
+          <button
+            onClick={handleConnectPrinter}
+            className="
+              fixed z-50 top-3 right-3 w-10 h-10 flex items-center justify-center
+              rounded-full shadow-lg bg-white border-2 border-red-500
+              hover:bg-red-50 transition-colors
+            "
+            title="Conectar impresora"
+            style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.10)" }}
+          >
+            <Printer size={25} className="text-red-500" />
+          </button>
+        )}
       </main>
     </div>
   );
-} 
+}

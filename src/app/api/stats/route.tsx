@@ -14,24 +14,24 @@ export async function GET(request: NextRequest) {
     const date = searchParams.get("date");
     const month = searchParams.get("month");
 
+    // Siempre filtra por estado activo
     const where: any = { status: "ACTIVE" };
 
     let start: Date, end: Date;
-    const lima = "America/Lima";
 
     if (date) {
-      start = dayjs.tz(`${date} 00:00:00`, lima).toDate();
-      end = dayjs.tz(`${date} 23:59:59.999`, lima).toDate();
+      start = dayjs(date).startOf('day').toDate();
+      end = dayjs(date).endOf('day').toDate();
       where.createdAt = { gte: start, lte: end };
     } else if (month) {
       const [year, m] = month.split("-");
-      start = dayjs.tz(`${year}-${m}-01 00:00:00`, lima).toDate();
-      end = dayjs.tz(`${year}-${m}-01 00:00:00`, lima).endOf("month").toDate();
+      start = dayjs(`${year}-${m}-01`).startOf('month').toDate();
+      end = dayjs(`${year}-${m}-01`).endOf('month').toDate();
       where.createdAt = { gte: start, lte: end };
     } else {
-      const now = dayjs().tz(lima);
-      start = now.startOf("day").toDate();
-      end = now.endOf("day").toDate();
+      const now = dayjs();
+      start = now.startOf('day').toDate();
+      end = now.endOf('day').toDate();
       where.createdAt = { gte: start, lte: end };
     }
 
@@ -187,6 +187,13 @@ export async function GET(request: NextRequest) {
         }
       });
     });
+
+    // DEBUG: Ver ventas encontradas
+    console.log("Notas encontradas:", saleNotes.map(n => ({
+      id: n.id,
+      createdAt: n.createdAt,
+      status: n.status
+    })));
 
     return NextResponse.json({
       totalVendido,

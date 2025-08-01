@@ -1,11 +1,14 @@
 "use client";
 import { useState, useEffect } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { Menu, X, BarChart2, Calendar, TrendingUp, Package, ShoppingCart, Home } from "lucide-react";
+import { Menu, X, BarChart2, Calendar, TrendingUp, Package, ShoppingCart, Home, LogOut } from "lucide-react";
+import { useUserStore } from "@/store/userStore"; // Asegúrate de tener este import
+
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
+  const logout = useUserStore((state) => state.logout);
 
   // Cierra el sidebar en móviles al cambiar de ruta
   useEffect(() => {
@@ -17,6 +20,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const handleNav = (href: string) => {
     router.push(href);
     setOpen(false);
+  };
+
+  const handleLogout = () => {
+    logout();
+    router.replace("/");
   };
 
   return (
@@ -35,7 +43,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-green-600 rounded-lg flex items-center justify-center">
               <BarChart2 className="text-white" size={22} />
             </div>
-            <h2 className="text-xl md:text-2xl font-bold text-gray-800">Altoke POS</h2>
+            <h2 className="text-xl md:text-2xl font-bold text-gray-800">
+              Altoke POS <span className="text-base md:text-xl font-normal text-blue-600 ml-2">Dashboard</span>
+            </h2>
           </div>
           {/* Botón cerrar solo en móviles */}
           <button
@@ -47,7 +57,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           </button>
         </div>
         <nav className="flex flex-col p-4 md:p-6 space-y-2">
-      {/* Botón Home */}
+          {/* Botón Home */}
           <button
             onClick={() => handleNav("/dashboard")}
             className={`flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-colors ${
@@ -59,7 +69,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             <Home size={20} />
             Inicio
           </button>
-
           <button
             onClick={() => handleNav("/dashboard/daily")}
             className={`flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-colors ${
@@ -70,7 +79,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           >
             <Calendar size={20} />
             Ventas por día
-          </button> 
+          </button>
           <button
             onClick={() => handleNav("/dashboard/manage-products")}
             className={`flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-colors ${
@@ -82,21 +91,28 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             <Package size={20} />
             Gestión de productos
           </button>
-                    <button
-            onClick={() => handleNav("/pos")}
-            className={`flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-colors ${
-              pathname === "/pos"
-                ? "bg-blue-50 text-blue-600"
-                : "text-gray-600 hover:bg-gray-50 hover:text-gray-800"
-            }`}
-          >
-            <ShoppingCart size={20} />
-            Ir a punto de venta
-          </button>
+        <button
+          onClick={() => handleNav("/pos")}
+          className={`flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-colors ${
+            pathname === "/pos"
+              ? "bg-green-600 text-white"
+              : "bg-green-500 text-white hover:bg-green-600"
+          }`}
+        >
+          <ShoppingCart size={20} />
+          Ir a punto de venta
+        </button>
         </nav>
         {/* Footer del sidebar */}
         <div className="mt-auto p-4 md:p-6 border-t border-gray-100">
-          <div className="text-center">
+          <button
+            onClick={handleLogout}
+            className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-lg bg-red-50 text-red-600 font-medium hover:bg-red-100 transition-colors"
+          >
+            <LogOut size={20} />
+            Cerrar sesión
+          </button>
+          <div className="text-center mt-6">
             <div className="w-10 h-10 md:w-12 md:h-12 bg-gradient-to-br from-blue-500 to-green-600 rounded-full flex items-center justify-center mx-auto mb-2">
               <BarChart2 className="text-white" size={24} />
             </div>

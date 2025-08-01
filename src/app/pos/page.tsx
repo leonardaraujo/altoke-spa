@@ -39,6 +39,9 @@ export default function POSPage() {
     loadFromStorage,
   } = useCartStore();
 
+  // Estado de edición de cantidades
+  const [editingQuantities, setEditingQuantities] = useState<{[key: number]: string}>({});
+
   // Estados locales (sin carrito)
   const [productos, setProductos] = useState<Producto[]>([]);
   const [paymentTypes, setPaymentTypes] = useState<PaymentType[]>([]);
@@ -539,37 +542,37 @@ export default function POSPage() {
                   </div>
                 ) : (
                   carrito.map((item) => {
-                    // AHORA usamos el Map del store
-                    const prod = productosCarrito.get(item.id);
-                    const isPack = !!prod && !!prod.unitsPerPackage && prod.unitsPerPackage > 1;
-                    const unidadesReales = isPack ? (prod?.unitsPerPackage ?? 1) * item.cantidad : item.cantidad;
-                    
-                    return (
-                      <div key={item.id} className="bg-gradient-to-r from-gray-50 to-blue-50 rounded-xl p-4 border border-gray-100 hover:shadow-sm transition-all">
-                        <div className="flex gap-3">
-                          {/* Imagen */}
-                          <div className="w-14 h-14 rounded-lg overflow-hidden bg-white flex items-center justify-center border-2 border-white shadow-sm">
-                            {prod?.images?.small ? (
-                              <img
-                                src={`${BASE_URL}${prod.images.small}`}
-                                alt={item.name}
-                                className="w-full h-full object-cover"
-                              />
-                            ) : (
-                              <Coffee className="text-gray-400" size={24} />
-                            )}
-                          </div>
+                  // AHORA usamos el Map del store
+                  const prod = productosCarrito.get(item.id);
+                  const isPack = !!prod && !!prod.unitsPerPackage && prod.unitsPerPackage > 1;
+                  const unidadesReales = isPack ? (prod?.unitsPerPackage ?? 1) * item.cantidad : item.cantidad;
+
+                  return (
+                    <div key={item.id} className="bg-gradient-to-r from-gray-50 to-blue-50 rounded-xl p-4 border border-gray-100 hover:shadow-sm transition-all">
+                      <div className="flex gap-3">
+                        {/* Imagen */}
+                        <div className="w-14 h-14 rounded-lg overflow-hidden bg-white flex items-center justify-center border-2 border-white shadow-sm">
+                          {prod?.images?.small ? (
+                            <img
+                              src={`${BASE_URL}${prod.images.small}`}
+                              alt={item.name}
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <Coffee className="text-gray-400" size={24} />
+                          )}
+                        </div>
+                        
+                        {/* Info del producto */}
+                        <div className="flex-1 min-w-0">
+                          <h4 className="font-semibold text-gray-800 text-sm truncate mb-1">
+                            {item.name}
+                          </h4>
                           
-                          {/* Info del producto */}
-                          <div className="flex-1 min-w-0">
-                            <h4 className="font-semibold text-gray-800 text-sm truncate mb-1">
-                              {item.name}
-                            </h4>
-                            
-                            <div className="flex items-center gap-2 mb-2">
-                              <span className="text-blue-600 font-bold text-sm">
-                                S/{item.price.toFixed(2)}
-                              </span>
+                          <div className="flex items-center gap-2 mb-2">
+                            <span className="text-blue-600 font-bold text-sm">
+                              S/{item.price.toFixed(2)}
+                            </span>
                             {isPack ? (
                               <div className="inline-flex items-center gap-1 bg-blue-100 text-blue-700 px-2 py-1 rounded-full text-xs font-medium">
                                 <Package size={12} />
@@ -580,50 +583,86 @@ export default function POSPage() {
                                 Unitario
                               </div>
                             )}
-                            </div>
+                          </div>
 
-                            {/* Controles de cantidad */}
-                            <div className="flex items-center justify-between">
-                              <div className="flex items-center gap-2 bg-white rounded-lg border border-gray-200 p-1">
-                                <button
-                                  onClick={() => cambiarCantidad(item.id, -1)}
-                                  className="w-6 h-6 rounded-md bg-gray-100 hover:bg-gray-200 flex items-center justify-center transition-colors"
-                                >
-                                  <Minus size={12} />
-                                </button>
-                                <span className="w-8 text-center text-sm font-semibold">
-                                  {item.cantidad}
-                                </span>
-                                <button
-                                  onClick={() => cambiarCantidad(item.id, 1)}
-                                  className="w-6 h-6 rounded-md bg-blue-100 hover:bg-blue-200 text-blue-600 flex items-center justify-center transition-colors"
-                                >
-                                  <Plus size={12} />
-                                </button>
+                          {/* Controles de cantidad */}
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2 bg-white rounded-lg border border-gray-200 p-1">
+                              <button
+                                onClick={() => cambiarCantidad(item.id, -1)}
+                                className="w-6 h-6 rounded-md bg-gray-100 hover:bg-gray-200 flex items-center justify-center transition-colors"
+                              >
+                                <Minus size={12} />
+                              </button>
+                              {/* Input editable */}
+                              <input
+                                type="number"
+                                value={editingQuantities[item.id] !== undefined ? editingQuantities[item.id] : item.cantidad}
+                                onChange={e => {
+                                  const val = e.target.value;
+                                  // Actualiza el estado temporal
+                                  setEditingQuantities(prev => ({
+                                    ...prev,
+                                    [item.id]: val
+                                  }));
+                                }}
+                                onBlur={e => {
+                                  const val = e.target.value;
+                                  const num = Number(val);
+                                  
+                                  // Limpia el estado temporal
+                                  setEditingQuantities(prev => {
+                                    const newState = { ...prev };
+                                    delete newState[item.id];
+                                    return newState;
+                                  });
+                                  
+                                  // Valida y actualiza la cantidad final
+                                  if (!val || num < 1) {
+                                    cambiarCantidad(item.id, 1 - item.cantidad);
+                                  } else {
+                                    cambiarCantidad(item.id, num - item.cantidad);
+                                  }
+                                }}
+                                onKeyDown={e => {
+                                  // Si presiona Enter, ejecuta el onBlur
+                                  if (e.key === 'Enter') {
+                                    e.currentTarget.blur();
+                                  }
+                                }}
+                                className="w-12 text-center text-sm font-semibold border rounded px-1"
+                                style={{ MozAppearance: 'textfield' }}
+                              />
+                              <button
+                                onClick={() => cambiarCantidad(item.id, 1)}
+                                className="w-6 h-6 rounded-md bg-blue-100 hover:bg-blue-200 text-blue-600 flex items-center justify-center transition-colors"
+                              >
+                                <Plus size={12} />
+                              </button>
+                            </div>
+                            
+                            <div className="text-right">
+                              <div className="text-sm font-bold text-gray-800">
+                                S/{(item.price * item.cantidad).toFixed(2)}
                               </div>
-                              
-                              <div className="text-right">
-                                <div className="text-sm font-bold text-gray-800">
-                                  S/{(item.price * item.cantidad).toFixed(2)}
-                                </div>
-                                <div className="text-xs text-blue-600 font-medium">
-                                  {unidadesReales} unid.
-                                </div>
+                              <div className="text-xs text-blue-600 font-medium">
+                                {unidadesReales} unid.
                               </div>
                             </div>
                           </div>
-
-                          {/* Botón eliminar */}
-                          <button
-                            onClick={() => eliminarProducto(item.id)}
-                            className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors self-start"
-                            title="Eliminar producto"
-                          >
-                            <Trash2 size={16} />
-                          </button>
                         </div>
+
+                        {/* Botón eliminar */}
+                        <button
+                          onClick={() => eliminarProducto(item.id)}
+                          className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors self-start"
+                          title="Eliminar producto"
+                        >
+                          <Trash2 size={16} />
+                        </button>
                       </div>
-                    );
+                    </div>
+                  );
                   })
                 )}
               </div>
