@@ -4,7 +4,11 @@ import usePrinterStore from "@/store/printerStore";
 import { Printer } from "lucide-react";
 import { writeData } from "@/utils/printerUtils";
 import { generateReceipt } from "@/utils/receiptTemplate";
-
+import dayjs from "dayjs";
+import utc from "dayjs/plugin/utc";
+import timezone from "dayjs/plugin/timezone";
+dayjs.extend(utc);
+dayjs.extend(timezone);
 type MetodoPago = {
   paymentTypeId: number;
   paymentTypeName: string;
@@ -114,7 +118,9 @@ export default function HistorialVentas() {
             <div key={venta.id} className="bg-white rounded-xl shadow p-6 border border-gray-200">
               <div className="flex justify-between items-center mb-2">
                 <span className="font-semibold text-blue-700">Venta #{venta.id}</span>
-                <span className="text-sm text-gray-500">{new Date(venta.fecha).toLocaleString()}</span>
+               <span className="text-sm text-gray-500">
+                {dayjs(venta.fecha).tz("America/Lima").format("DD/MM/YYYY HH:mm")}
+              </span>
               </div>
               <div className="mb-2">
                 <span className="text-gray-700">Estado:</span>{" "}

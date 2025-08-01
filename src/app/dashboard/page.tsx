@@ -58,10 +58,7 @@ export default function Dashboard() {
           productosActivos: productsData.products?.filter((p: any) => p.active).length || 0,
           ultimasVentas: salesData.saleNotes?.slice(0, 3).map((v: any) => ({
             id: v.id,
-            fecha: new Date(v.createdAt).toLocaleTimeString('es-PE', { 
-              hour: '2-digit', 
-              minute: '2-digit' 
-            }),
+            fecha: dayjs(v.createdAt).tz("America/Lima").format("HH:mm"),
             total: v.total,
             productos: v.details?.slice(0, 2).map((d: any) => ({
               nombre: d.productName,

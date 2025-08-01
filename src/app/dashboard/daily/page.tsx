@@ -15,7 +15,10 @@ import {
   AlertTriangle,
 } from "lucide-react";
 import { toast } from "sonner";
-
+import utc from "dayjs/plugin/utc";
+import timezone from "dayjs/plugin/timezone";
+dayjs.extend(utc);
+dayjs.extend(timezone);
 type ProductoMasVendido = {
   id: number;
   nombre: string;
@@ -93,7 +96,9 @@ type Stats = {
 const minDate = process.env.NEXT_PUBLIC_MIN_DATE || "2024-01-01";
 
 export default function DailyStatsPage() {
-  const [selected, setSelected] = useState<Date | undefined>(new Date());
+  const [selected, setSelected] = useState<Date | undefined>(
+    dayjs().tz("America/Lima").toDate()
+  );
   const [stats, setStats] = useState<Stats | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -243,7 +248,7 @@ export default function DailyStatsPage() {
                   onSelect={setSelected}
                   hidden={{
                     before: dayjs(minDate).toDate(),
-                    after: new Date(),
+                    after: dayjs().tz("America/Lima").toDate(),
                   }}
                   captionLayout="dropdown"
                   className="rdp-small"
