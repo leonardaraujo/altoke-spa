@@ -239,12 +239,12 @@ export async function GET(request: NextRequest) {
     if (startDate || endDate) {
       where.createdAt = {};
       if (startDate) {
-        // Inicio del día
-        where.createdAt.gte = dayjs(startDate).startOf('day').toDate();
+        // Inicio del día en Lima
+        where.createdAt.gte = dayjs.tz(startDate, "America/Lima").startOf('day').utc().toDate();
       }
       if (endDate) {
-        // Final del día
-        where.createdAt.lte = dayjs(endDate).endOf('day').toDate();
+        // Fin del día en Lima
+        where.createdAt.lte = dayjs.tz(endDate, "America/Lima").endOf('day').utc().toDate();
       }
     }
 

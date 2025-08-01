@@ -20,18 +20,18 @@ export async function GET(request: NextRequest) {
     let start: Date, end: Date;
 
     if (date) {
-      start = dayjs(date).startOf('day').toDate();
-      end = dayjs(date).endOf('day').toDate();
+      start = dayjs.tz(date, "America/Lima").startOf('day').utc().toDate();
+      end = dayjs.tz(date, "America/Lima").endOf('day').utc().toDate();
       where.createdAt = { gte: start, lte: end };
     } else if (month) {
       const [year, m] = month.split("-");
-      start = dayjs(`${year}-${m}-01`).startOf('month').toDate();
-      end = dayjs(`${year}-${m}-01`).endOf('month').toDate();
+      start = dayjs.tz(`${year}-${m}-01`, "America/Lima").startOf('month').utc().toDate();
+      end = dayjs.tz(`${year}-${m}-01`, "America/Lima").endOf('month').utc().toDate();
       where.createdAt = { gte: start, lte: end };
     } else {
-      const now = dayjs();
-      start = now.startOf('day').toDate();
-      end = now.endOf('day').toDate();
+      const now = dayjs().tz("America/Lima");
+      start = now.startOf('day').utc().toDate();
+      end = now.endOf('day').utc().toDate();
       where.createdAt = { gte: start, lte: end };
     }
 
