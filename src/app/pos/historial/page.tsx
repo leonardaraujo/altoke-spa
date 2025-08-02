@@ -81,9 +81,6 @@ export default function HistorialVentas() {
         sale,
         user,
         payments,
-        businessName: "ALTOKE SPA",
-        ruc: "RUC 12345678901",
-        address: "Jr. Miguel Grau 305-Cochas Chico",
       });
 
       // Enviar a la impresora

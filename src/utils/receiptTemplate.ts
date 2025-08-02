@@ -2,7 +2,7 @@
 import ReceiptPrinterEncoder from "@point-of-sale/receipt-printer-encoder";
 import numeral from "numeral";
 import dayjs from "dayjs";
-
+import { BUSINESS_NAME, BUSINESS_RUC, BUSINESS_ADDRESS } from "@/config/businessData";
 // Puedes ajustar estos tipos según tus interfaces reales
 type SaleDetail = {
   quantity: number;
@@ -37,9 +37,9 @@ interface ReceiptOptions {
   sale: SaleNote;
   user: User;
   payments?: Payment[];
-  businessName?: string;
-  ruc?: string;
-  address?: string;
+  businessName?: string | null;
+  ruc?: string | null;
+  address?: string | null;
 }
 
 const encoder = new ReceiptPrinterEncoder({ language: "esc-pos", columns: 32 });
@@ -81,26 +81,35 @@ export function generateReceipt({
   sale,
   user,
   payments = [],
-  businessName = "ALTOKE SPA",
-  ruc = "RUC 12345678901",
-  address = "Jr. Miguel Grau 305-Cochas Chico",
+  businessName = BUSINESS_NAME,
+  ruc = BUSINESS_RUC,
+  address = BUSINESS_ADDRESS,
 }: ReceiptOptions) {
+  // Si businessName es null/undefined, usar ALTOKE ERP
+  const nameToPrint = businessName ?? "ALTOKE ERP";
+
   let receipt = encoder
     .initialize()
     .codepage("windows1252")
     .align("center")
     .width(2)
     .height(2)
-    .line(businessName)
+    .line(nameToPrint)
     .width(1)
-    .height(1)
-    .line(ruc);
+    .height(1);
 
-  // Dividir la dirección en múltiples líneas si es necesaria
-  const addressLines = splitText(address, 20);
-  addressLines.forEach(line => {
-    receipt = receipt.line(line);
-  });
+  // Solo imprime RUC si existe y no es null/undefined/vacío
+  if (ruc) {
+    receipt = receipt.line(ruc);
+  }
+
+  // Solo imprime dirección si existe y no es null/undefined/vacío
+  if (address) {
+    const addressLines = splitText(address, 20);
+    addressLines.forEach(line => {
+      receipt = receipt.line(line);
+    });
+  }
 
   receipt = receipt
     .newline()

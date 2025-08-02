@@ -214,9 +214,6 @@ export default function POSPage() {
         },
         user: { name: user?.name || "Vendedor" },
         payments: pagos,
-        businessName: "KUSKAS",
-        ruc: "RUC 12345678901",
-        address: "Jr. Miguel Grau 305-Cochas Chico",
       });
 
       // Enviar a la impresora
