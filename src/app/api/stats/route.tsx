@@ -13,22 +13,32 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const date = searchParams.get("date");
     const month = searchParams.get("month");
+    const startDate = searchParams.get("startDate"); // <-- NUEVO
+    const endDate = searchParams.get("endDate");     // <-- NUEVO
 
     // Siempre filtra por estado activo
     const where: any = { status: "ACTIVE" };
 
     let start: Date, end: Date;
 
-    if (date) {
+    if (startDate && endDate) {
+      // NUEVO: Rango personalizado (para semana, mes personalizado, etc.)
+      start = dayjs.tz(startDate, "America/Lima").startOf('day').utc().toDate();
+      end = dayjs.tz(endDate, "America/Lima").endOf('day').utc().toDate();
+      where.createdAt = { gte: start, lte: end };
+    } else if (date) {
+      // Día específico
       start = dayjs.tz(date, "America/Lima").startOf('day').utc().toDate();
       end = dayjs.tz(date, "America/Lima").endOf('day').utc().toDate();
       where.createdAt = { gte: start, lte: end };
     } else if (month) {
+      // Mes específico
       const [year, m] = month.split("-");
       start = dayjs.tz(`${year}-${m}-01`, "America/Lima").startOf('month').utc().toDate();
       end = dayjs.tz(`${year}-${m}-01`, "America/Lima").endOf('month').utc().toDate();
       where.createdAt = { gte: start, lte: end };
     } else {
+      // Hoy por defecto
       const now = dayjs().tz("America/Lima");
       start = now.startOf('day').utc().toDate();
       end = now.endOf('day').utc().toDate();
