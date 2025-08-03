@@ -2,11 +2,12 @@
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { usePathname } from "next/navigation";
+import Link from "next/link";
 import {
   Menu,
   X,
   ShoppingCart,
-  Package,
+  History,
   CreditCard,
   LogOut,
   BarChart2,
@@ -76,8 +77,9 @@ export default function PosLayout({ children }: { children: React.ReactNode }) {
         </div>
 
         <nav className="flex flex-col p-6 space-y-2">
-          <a
+          <Link
             href="/pos"
+            onClick={() => setOpen(false)}
             className={`flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-colors
               ${pathname === "/pos"
                 ? "bg-blue-50 text-blue-600"
@@ -86,30 +88,31 @@ export default function PosLayout({ children }: { children: React.ReactNode }) {
           >
             <ShoppingCart size={20} />
             Punto de Venta
-          </a>
-          <a
+          </Link>
+          <Link
             href="/pos/historial"
+            onClick={() => setOpen(false)}
             className={`flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-colors
               ${pathname === "/pos/historial"
                 ? "bg-blue-50 text-blue-600"
                 : "text-gray-600 hover:bg-gray-50 hover:text-gray-800"}
             `}
           >
-            <Package size={20} />
+            <History size={20} />
             Historial de Ventas
-          </a>
+          </Link>
           {user?.role === "admin" && (
-          <a
-            href="/dashboard"
-            className={`flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-colors ${
-              pathname === "/dashboard"
-                ? "bg-blue-600 text-white"
-                : "bg-blue-500 text-white hover:bg-blue-600"
-            }`}
-          >
-            <BarChart2 size={20} />
-            Ir a Dashboard
-          </a>
+            <Link
+              href="/dashboard"
+              className={`flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-colors ${
+                pathname === "/dashboard"
+                  ? "bg-blue-600 text-white"
+                  : "bg-blue-500 text-white hover:bg-blue-600"
+              }`}
+            >
+              <BarChart2 size={20} />
+              Ir a Dashboard
+            </Link>
           )}
         </nav>
 
@@ -164,18 +167,20 @@ export default function PosLayout({ children }: { children: React.ReactNode }) {
         {children}
 
         {/* Botón flotante de impresora SOLO si está desconectada */}
+        {/* Botón flotante de impresora SOLO si está desconectada */}
         {!printerState && (
           <button
             onClick={handleConnectPrinter}
             className="
               fixed z-50 top-3 right-3 w-10 h-10 flex items-center justify-center
-              rounded-full shadow-lg bg-white border-2 border-red-500
-              hover:bg-red-50 transition-colors
+              rounded-full shadow-lg border-2 border-red-700
+              bg-red-600 animate-pulse
+              transition-colors
             "
             title="Conectar impresora"
             style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.10)" }}
           >
-            <Printer size={25} className="text-red-500" />
+            <Printer size={25} className="text-white" />
           </button>
         )}
       </main>

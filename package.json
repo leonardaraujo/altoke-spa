@@ -16,6 +16,7 @@
     "@point-of-sale/receipt-printer-encoder": "^3.0.3",
     "@prisma/client": "^6.12.0",
     "bcryptjs": "^3.0.2",
+    "date-fns": "^4.1.0",
     "dayjs": "^1.11.13",
     "jsonwebtoken": "^9.0.2",
     "lucide-react": "^0.528.0",

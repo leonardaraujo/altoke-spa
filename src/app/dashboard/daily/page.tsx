@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { DayPicker } from "react-day-picker";
 import "react-day-picker/dist/style.css";
 import dayjs from "dayjs";
+import { es } from "date-fns/locale";
 import {
   Calendar,
   TrendingUp,
@@ -247,12 +248,15 @@ export default function DailyStatsPage() {
                   selected={selected}
                   onSelect={setSelected}
                   hidden={{
-                    before: dayjs(minDate).toDate(),
+                    before: dayjs.tz(minDate, "America/Lima").toDate(),
                     after: dayjs().tz("America/Lima").toDate(),
                   }}
+                  startMonth={dayjs.tz(minDate, "America/Lima").toDate()}
+                  endMonth={dayjs().tz("America/Lima").toDate()}
                   captionLayout="dropdown"
                   className="rdp-small"
-                  styles={{
+                  locale={es}
+                  styles={{ 
                     root: { fontSize: "14px" },
                     months: { width: "100%" },
                     month: { width: "100%" },

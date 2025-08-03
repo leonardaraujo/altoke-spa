@@ -1,10 +1,12 @@
 import { create } from 'zustand';
+
 interface IPrinterStore {
   toggleCharacteristic: any;
   printerState: boolean;
   connect: (toggleCharacteristic: any) => void;
   disconnect: () => void;
 }
+
 const usePrinterStore = create<IPrinterStore>((set) => ({
   toggleCharacteristic: undefined,
   printerState: false,
@@ -19,4 +21,5 @@ const usePrinterStore = create<IPrinterStore>((set) => ({
       printerState: false,
     })),
 }));
+
 export default usePrinterStore;
